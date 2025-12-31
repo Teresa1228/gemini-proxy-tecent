@@ -32,8 +32,6 @@
 ### 1.1 安装 Git 和基础库
 
 ```bash
-# 更新系统软件源
-sudo dnf update -y
 
 # 安装 Git (这是克隆代码必须的)
 sudo dnf install git -y
@@ -45,9 +43,6 @@ sudo dnf install git -y
 本项目依赖 Node.js 运行。我们安装 v18 或更高版本。
 
 ```bash
-# 安装 Node.js 18
-sudo dnf module install nodejs:18 -y
-
 # 验证安装是否成功 (如果显示版本号则成功)
 node -v
 npm -v
@@ -71,13 +66,15 @@ sudo npm install pm2 -g
 现在工具都装好了，我们把代码从 GitHub 拉取到服务器上。
 
 ```bash
-# 1. 克隆仓库
+# 1. 进入home文件夹
+cd /home/
+# 2. 克隆仓库 
 git clone https://github.com/Teresa1228/gemini-proxy-tecent.git
 
-# 2. 进入项目目录
-cd 你的项目名
+# 3. 进入项目目录cd 你的项目名
+cd gemini-proxy-tecent/
 
-# 3. 安装项目依赖
+# 4. 安装项目依赖
 npm install
 
 ```
@@ -148,8 +145,6 @@ pm2 save
 ### 5.1 安装 Nginx 和 SSL 工具
 
 ```bash
-# 安装 EPEL 仓库 (很多软件都在这里面)
-sudo dnf install epel-release -y
 
 # 安装 Nginx 和 Certbot
 sudo dnf install nginx certbot python3-certbot-nginx -y
@@ -181,27 +176,44 @@ sudo nano /etc/nginx/conf.d/gemini.conf
 ```
 
 
-2. **粘贴以下内容**（把 `你的域名` 替换成真实域名，如 `aidev.h5in.net`）：
+2. **粘贴以下内容**（把 `你的域名` 替换成真实域名）：
 ```nginx
+# 1. 监听 80 端口，强制跳转到 HTTPS
 server {
     listen 80;
-    server_name 你的域名;  # ⬅️ 修改这里
+    server_name 你的域名;
+    return 301 https://$host$request_uri;
+}
+
+# 2. 监听 443 端口 (HTTPS)
+server {
+    listen 443 ssl;
+    server_name 你的域名;
+
+    # 🔥🔥🔥 关键：请修改下面两行为你真实的证书路径 🔥🔥🔥
+    ssl_certificate     /etc/nginx/ssl/xxxx.net_bundle.crt; 
+    ssl_certificate_key /etc/nginx/ssl/xxxx.key;
+
+    # SSL 优化配置 
+    ssl_session_timeout 5m;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:HIGH:!aNULL:!MD5:!RC4:!DHE;
 
     location / {
-        proxy_pass http://127.0.0.1:8080; # 转发给 Node.js
+        # 转发给你的 Node.js (8080)
+        proxy_pass http://127.0.0.1:8080;
 
-        # 标准转发头设置
+        # 必要的转发头
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
 
-        # 增加超时时间 (防止 AI 生成长文时中断)
+        # 超时设置
         proxy_read_timeout 300s;
     }
 }
-
 ```
 
 
@@ -214,9 +226,9 @@ sudo systemctl reload nginx
 
 
 
-### 5.4 一键开启 HTTPS
+### 5.3.2（获取证书另一种方式，如果已有可忽略）一键开启 HTTPS
 
-最后，使用 Certbot 自动申请免费证书并配置 HTTPS。
+使用 Certbot 自动申请免费证书并配置 HTTPS。
 
 ```bash
 # 请替换为你的真实域名
@@ -249,7 +261,7 @@ sudo certbot --nginx -d 你的域名
 curl -X POST https://你的域名/api/generate \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gemini-1.5-flash",
+    "model": "gemini-2.5-flash",
     "contents": [{ "parts": [{ "text": "Hello, world!" }] }]
   }'
 

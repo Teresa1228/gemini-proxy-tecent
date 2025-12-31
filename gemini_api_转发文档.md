@@ -65,7 +65,7 @@ Body 数据包包含具体的生成指令。
 
 | 字段名 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `model` | String | 是 | 模型名称。如 `gemini-1.5-flash`, `gemini-2.5-flash-image` |
+| `model` | String | 是 | 模型名称。如 `gemini-2.5-flash`, `gemini-2.5-flash-image` |
 | `contents` | Array | 是 | 对话历史或提示词。包含 `role` 和 `parts`。 |
 | `config` | Object | 否 | 用于控制图片比例、输出类型(文本/图片)、联网搜索等。 |
 
@@ -176,7 +176,7 @@ fetch('http://localhost:8080/api/generate', {
         'x-dev-token': 'admin666' // 🔥 你的 DEV_TOKEN
     },
     body: JSON.stringify({
-        model: "gemini-1.5-flash",
+        model: "gemini-2.5-flash",
         contents: [{ role: "user", parts: [{ text: "你好" }] }]
     })
 })
